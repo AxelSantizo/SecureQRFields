@@ -1,0 +1,4 @@
+# Ignorar archivos generados por el editor
+.vs/
+.git/
+
