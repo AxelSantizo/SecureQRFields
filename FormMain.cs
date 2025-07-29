@@ -1,34 +1,76 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Windows.Forms;
 using SecureQRFields.Models;
 using SecureQRFields.Services;
 using SecureQRFields.Utils;
+using SecureQRFields.Data;
 
 namespace SecureQRFields
 {
     public partial class FormMain : Form
     {
+        private List<SucursalConnectionInfo> sucursalesDisponibles;
+
         public FormMain()
         {
             InitializeComponent();
-            CargarDatosPredeterminados();
         }
 
-        // Agregar filas con datos predeterminados
-        private void CargarDatosPredeterminados()
+        private void FormMain_Load(object sender, EventArgs e)
         {
-            dataGridCampos.Rows.Add("ServerAddress", "", "Encriptado");
-            dataGridCampos.Rows.Add("PortNumber", "", "Encriptado");
-            dataGridCampos.Rows.Add("DatabaseName", "", "Encriptado");
-            dataGridCampos.Rows.Add("Username", "", "Encriptado");
-            dataGridCampos.Rows.Add("Password", "", "Encriptado");
+            try
+            {
+                var repo = new SucursalRepository();
+                sucursalesDisponibles = repo.ObtenerSucursales();
+
+                comboSucursales.DisplayMember = "NombreSucursal";
+                comboSucursales.ValueMember = "NombreSucursal";
+                comboSucursales.DataSource = sucursalesDisponibles;
+                comboSucursales.SelectedIndex = -1;
+
+                // Limpiar tabla al cargar
+                dataGridCampos.Rows.Clear();
+                picQRPreview.Image = null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al cargar sucursales: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
-        // Evento principal al presionar "Generar QR"
-        private void btnGenerarQR_Click(object sender, EventArgs e)
+        private void comboSucursales_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (comboSucursales.SelectedIndex < 0)
+                return;
+
+            var sucursal = (SucursalConnectionInfo)comboSucursales.SelectedItem;
+
+            // 1. Limpiar
+            dataGridCampos.Rows.Clear();
+
+            // 2. Agregar campos
+            AgregarCampo("Host", sucursal.Server);
+            AgregarCampo("Port", "3306");
+            AgregarCampo("Database", sucursal.Database);
+            AgregarCampo("UserName", sucursal.Uid);
+            AgregarCampo("Password", sucursal.Pwd);
+
+            // 3. Generar QR automáticamente
+            GenerarQR();
+        }
+
+        private void AgregarCampo(string campo, string valor)
+        {
+            int index = dataGridCampos.Rows.Add();
+            var fila = dataGridCampos.Rows[index];
+            fila.Cells["colCampo"].Value = campo;
+            fila.Cells["colValor"].Value = valor;
+            fila.Cells["colCodificacion"].Value = "Encriptado"; // Por defecto
+        }
+
+        private void GenerarQR()
         {
             var campos = ObtenerCamposDesdeTabla();
 
@@ -40,13 +82,8 @@ namespace SecureQRFields
 
             try
             {
-                // 1. Generar JSON protegido
                 string jsonFinal = JsonHelper.GenerarJsonProtegido(campos);
-
-                // 2. Generar código QR
                 Bitmap qrImage = QRService.GenerarQRDesdeTexto(jsonFinal);
-
-                // 3. Mostrar QR en PictureBox
                 picQRPreview.Image = qrImage;
             }
             catch (Exception ex)
@@ -55,7 +92,6 @@ namespace SecureQRFields
             }
         }
 
-        // Extraer todos los campos válidos del DataGridView
         private List<FieldEntry> ObtenerCamposDesdeTabla()
         {
             var listaCampos = new List<FieldEntry>();
@@ -94,14 +130,15 @@ namespace SecureQRFields
             return listaCampos;
         }
 
-        // Evento sin uso de momento
-        private void picQRPreview_Click(object sender, EventArgs e)
-        {
-        }
+        private void picQRPreview_Click(object sender, EventArgs e) { }
 
-        // Evento sin uso de momento
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e) { }
+
+        private void label1_Click(object sender, EventArgs e) { }
+
+        private void btnGenerarQR_Click(object sender, EventArgs e)
         {
+            GenerarQR();
         }
     }
 }

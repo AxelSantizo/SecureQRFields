@@ -6,9 +6,10 @@ Aplicación de escritorio en C# (.NET Framework 4.8) que permite ingresar campos
 
 ## 📦 Características principales
 
-- Generación de QR en base a datos personalizados (ej. conexión a base de datos, usuario, IP).
+- Generación de QR en base a datos personalizados o desde configuración remota.
 - Opción para:
-  - Ingresar campos de forma manual
+  - Ingresar campos manualmente
+  - Cargar configuración automáticamente desde base de datos (dbsucursales)
   - Encriptar (AES) o hashear (SHA256) valores seleccionados
   - Exportar el contenido como código QR con formato JSON
   - Lectura de QR compatible con Xamarin Forms y otras plataformas
@@ -19,32 +20,33 @@ Aplicación de escritorio en C# (.NET Framework 4.8) que permite ingresar campos
 
 El proyecto sigue una estructura por capas para mantener el código organizado y escalable:
 
-
-``` text
+```text
 SecureQRFields/
-├── SecureQRFields.sln               # Solución principal del proyecto
+├── SecureQRFields.sln
 │
-├── Models/                          # Clases de datos utilizadas por el sistema
-│   └── FieldEntry.cs                # Representa un campo dinámico con su valor y tipo (plano, encriptado, hasheado)
+├── Models/
+│   ├── FieldEntry.cs                 # Representa un campo dinámico
+│   └── SucursalConnectionInfo.cs     # Representa los datos de una sucursal remota
 │
-├── Services/                        # Lógica de negocio central
-│   ├── EncryptionService.cs         # Servicio para encriptar y desencriptar usando AES
-│   ├── HashService.cs               # Servicio para generar hashes SHA256
-│   └── QRService.cs                 # Servicio para generar códigos QR a partir de JSON
+├── Services/
+│   ├── EncryptionService.cs          # AES CBC con padding PKCS7
+│   ├── HashService.cs                # SHA256
+│   └── QRService.cs                  # Generación de código QR
 │
-├── Utils/                           # Utilidades y funciones auxiliares
-│   └── JsonHelper.cs                # Función para convertir la lista de campos a JSON
+├── Data/
+│   └── SucursalRepository.cs         # Obtención de sucursales desde dbsucursales
 │
-├── Views/                           # Formularios secundarios (modal de QR, ayuda, etc.)
-│   └── QRPreviewForm.cs             # Ventana para previsualizar el código QR generado
-|
-├── .gitignore                       # Archivos y carpetas ignoradas por Git
-├── App.config                       # Configuración de la aplicación (conexión, settings)
+├── Utils/
+│   └── JsonHelper.cs                 # Conversión de campos a JSON
 │
-├── FormMain.cs                      # Formulario principal de la aplicación
-├── Program.cs                       # Punto de entrada de la aplicación
+├── Views/
+│   └── QRPreviewForm.cs              # Vista para previsualizar el QR
 │
-└── README.md                        # Documentación principal del proyecto
+├── App.config                        # Configuraciones generales
+├── FormMain.cs                       # Lógica principal de la app
+├── Program.cs                        # Entry point
+└── README.md                         # Documentación del proyecto
+
 ```
 
 ---
@@ -56,6 +58,7 @@ SecureQRFields/
 - [QRCoder](https://github.com/codebude/QRCoder) (Generación de códigos QR)
 - [Newtonsoft.Json](https://www.newtonsoft.com/json) (Serialización JSON)
 - System.Security.Cryptography (AES/SHA256)
+- MySql.Data (Acceso a base de datos MySQL)
 
 ---
 
@@ -66,22 +69,23 @@ SecureQRFields/
    git clone https://github.com/Santizo00/SecureQRFields.git
    ```
 2. Abrí el proyecto en Visual Studio.
-3. Restaurá los paquetes NuGet necesarios (QRCoder y Newtonsoft.Json).
+3. Restaurá los paquetes NuGet necesarios (QRCoder, Newtonsoft.Json y MySql.Data).
 4. Compilá y ejecutá la aplicación.
 
 ---
 
 ## 🧪 Cómo usar la app
 
-1. Abrí la app.
-2. Ingresá los campos: nombre del campo y valor.
-3. Seleccioná si el valor debe ir en:
-   - Texto plano
-   - Encriptado (AES)
-   - Hasheado (SHA256)
-4. Presioná **"Generar QR"**.
-5. Se mostrará el código QR que contiene el JSON con los datos protegidos.
-6. Escanealo desde otro sistema (Xamarin Forms u otro) y procesá el contenido.
+### Modo manual
+1. Ingresá los campos: nombre, valor y codificación.
+2. Presioná "Generar QR".
+3. Se mostrará el código QR con los datos protegidos.
+
+### Modo automático
+1. Seleccioná una sucursal desde el ComboBox superior.
+2. Los campos de conexión serán cargados automáticamente y encriptados.
+3. El código QR se generará automáticamente sin presionar ningún botón.
+4. Escanealo desde otro sistema (Xamarin Forms, etc.) para obtener los datos.
 
 ---
 
